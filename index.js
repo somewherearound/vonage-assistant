@@ -9,7 +9,8 @@ const unirest = require('unirest')
 
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
-const openaiApiKey = process.env.OPENAI_API_KEY;
+const casper_key = process.env.CASPER_KEY;
+const casper_url = process.env.CASPER_URL;
 const eventUrl = process.env.EVENT_URL
 
 app.use(bodyParser.json())
@@ -52,54 +53,33 @@ app.post('/webhooks/asr', (request, response) => {
     console.log(request.body.timestamp)
     let promptText = request.body.speech.results[0].text
     
-    var req = unirest('POST', 'https://api.openai.com/v1/images/generations')
+    var req = unirest('POST', casper_url)
     .headers({
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + openaiApiKey
+      'Authorization': 'Bearer ' + casper_key
     })
     .send(JSON.stringify({
-      "prompt": promptText,
-      "n": 1,
-      "size": "1024x1024"
+      "prompt": promptText
     }))
     .end(function (res) { 
+      
       if (res.error) throw new Error(res.error); 
       console.log(res.raw_body);
-      console.log(res.body.data[0].url)
-      let imgUrl = res.body.data[0].url
-      sentMsg(phoneNumber, imgUrl)
-
+      ncco = [{
+        action: 'talk',
+        text: `res.raw_body`
+      }]
     });
 
-    const ncco = [{
+    ncco = [{
       action: 'talk',
-      text: `Got it, I'll sent link to generated image in WhatsApp`
+      text: `This is a test`
     }]
     response.json(ncco)
     
   })
 
-function sentMsg(phoneNumber, imgUrl) { 
-  console.log('sentMsg');
-    console.log(phoneNumber, imgUrl);
 
-    var req = unirest('POST', 'https://messages-sandbox.nexmo.com/v1/messages')
-  .headers({
-    'Authorization': 'Basic ' + Buffer.from(apiKey + ':' + apiSecret).toString('base64'),
-    'Content-Type': 'application/json'
-  })
-  .send(JSON.stringify({
-    "from": "14157386102",
-    "to": phoneNumber,
-    "message_type": "text",
-    "text": imgUrl,
-    "channel": "whatsapp"
-  }))
-  .end(function (res) { 
-    if (res.error) throw new Error(res.error); 
-    console.log(res.raw_body);
-  });
-}
 
 
 app.post('/webhooks/events', (request, response) => {
